@@ -1,0 +1,22 @@
+<mxfile host="app.diagrams.net" agent="Claude" version="24.0.0">
+  <diagram name="Architecture-L2" id="Architecture-L2">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="820" pageHeight="763" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="layer0" value="LỚP TRÌNH BÀY" style="swimlane;fontStyle=1;startSize=28;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="30" y="56" width="760" height="111" as="geometry"/></mxCell>
+        <mxCell id="layer0t" value="Màn hình M1 Tạo phiếu · M2 Danh sách phiếu · M3 Chi tiết phiếu (React)&#10;CustomerController, TicketController (REST API, FastAPI router)&#10;Trách nhiệm: nhận dữ liệu nhập, hiển thị kết quả và thông báo lỗi; KHÔNG chứa quy tắc nghiệp vụ" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;spacingLeft=8;" vertex="1" parent="layer0"><mxGeometry x="0" y="30" width="760" height="79" as="geometry"/></mxCell>
+        <mxCell id="layer1" value="LỚP NGHIỆP VỤ" style="swimlane;fontStyle=1;startSize=28;html=0;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="30" y="221" width="760" height="134" as="geometry"/></mxCell>
+        <mxCell id="layer1t" value="CustomerService — tra cứu/tạo khách (QT-01, QT-02); che số điện thoại [NFR2]&#10;TicketService — tạo phiếu, sinh hạn cam kết, tình trạng bảo hành, vòng đời (QT-03…QT-06)&#10;ClassifyService — đề xuất nhóm sự cố và mức ưu tiên&#10;Trách nhiệm: TOÀN BỘ quy tắc nghiệp vụ nằm ở lớp này [NFR4]" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;spacingLeft=8;" vertex="1" parent="layer1"><mxGeometry x="0" y="30" width="760" height="102" as="geometry"/></mxCell>
+        <mxCell id="layer2" value="LỚP TRUY CẬP DỮ LIỆU" style="swimlane;fontStyle=1;startSize=28;html=0;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="30" y="409" width="760" height="88" as="geometry"/></mxCell>
+        <mxCell id="layer2t" value="CustomerRepository · DeviceRepository · TicketRepository · IssueCategoryRepository&#10;Trách nhiệm: đọc/ghi qua giao diện Repository, che giấu SQL; phân trang ở CSDL [NFR1]" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;spacingLeft=8;" vertex="1" parent="layer2"><mxGeometry x="0" y="30" width="760" height="56" as="geometry"/></mxCell>
+        <mxCell id="layer3" value="LỚP LƯU TRỮ — PostgreSQL 18" style="swimlane;fontStyle=1;startSize=28;html=0;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="30" y="551" width="760" height="88" as="geometry"/></mxCell>
+        <mxCell id="layer3t" value="customer · device · issue_category · ticket · ticket_status_log&#10;Index (center_id, status, due_date) [NFR1]; index duy nhất một phiếu mở/thiết bị" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;spacingLeft=8;" vertex="1" parent="layer3"><mxGeometry x="0" y="30" width="760" height="56" as="geometry"/></mxCell>
+        <mxCell id="arr0" value="HTTP + JSON (docs/api-contract.md)" style="endArrow=block;html=0;fontSize=12;fontColor=#b00020;" edge="1" parent="1" source="layer0" target="layer1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr1" value="gọi hàm (đối tượng dữ liệu nghiệp vụ)" style="endArrow=block;html=0;fontSize=12;fontColor=#b00020;" edge="1" parent="1" source="layer1" target="layer2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="arr2" value="SQL (SQLAlchemy)" style="endArrow=block;html=0;fontSize=12;fontColor=#b00020;" edge="1" parent="1" source="layer2" target="layer3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="legend" value="CHÚ THÍCH: hộp = lớp; mũi tên = hướng phụ thuộc/gọi (lớp dưới KHÔNG gọi ngược lên lớp trên);&#10;nhãn đỏ = cách hai lớp trao đổi; [NFRx] = yêu cầu phi chức năng mà quyết định đó phục vụ.&#10;NGOÀI PHẠM VI: phân công kỹ thuật viên (L4) · gửi SMS cho khách · đăng nhập/quản lý nhân sự&#10;(dùng ID ngoài) · phê duyệt bảo hành" style="text;html=0;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=11;fontStyle=2;" vertex="1" parent="1"><mxGeometry x="30" y="661" width="760" height="80" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
