@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Đăng nhập | Mekong Mobile</title>
+  <link rel="stylesheet" href="/static/login.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">MEKONG MOBILE <span>·</span> SMART CRM</p>
+      <h1 id="page-title">Trung tâm<br>tiếp nhận bảo hành</h1>
+      <p class="intro-copy">Đăng nhập để tiếp tục làm việc với yêu cầu bảo hành.</p>
+      <div class="rule-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p class="footnote">Môi trường prototype · tài khoản demo</p>
+    </section>
+
+    <section class="auth-panel" aria-label="Đăng nhập">
+      <div class="panel-heading">
+        <span class="step-mark" aria-hidden="true">01</span>
+        <div>
+          <p class="eyebrow">XÁC THỰC</p>
+          <h2>Chào mừng trở lại</h2>
+        </div>
+      </div>
+
+      <form id="login-form" novalidate>
+        <label for="username">Tên đăng nhập</label>
+        <input id="username" name="username" autocomplete="username" required>
+
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+        <p id="form-message" class="message" role="status" aria-live="polite"></p>
+        <button id="submit-button" type="submit">
+          <span>Đăng nhập</span><span aria-hidden="true">↗</span>
+        </button>
+      </form>
+
+      <section id="classify-panel" class="classify-panel" hidden>
+        <div class="signed-in-row">
+          <span class="status-dot" aria-hidden="true"></span>
+          <p>Đã xác thực <strong id="signed-in-user"></strong></p>
+          <button id="logout-button" class="text-button" type="button">Đăng xuất</button>
+        </div>
+        <label for="issue-description">Mô tả sự cố</label>
+        <textarea id="issue-description" rows="3" minlength="10" maxlength="2000" placeholder="Ví dụ: Máy sạc không vào..."></textarea>
+        <button id="classify-button" class="secondary-button" type="button">Gửi phân loại</button>
+        <p id="classify-result" class="result empty" role="status" aria-live="polite">Kết quả đề xuất sẽ hiển thị ở đây sau khi gửi mô tả.</p>
+      </section>
+
+      <p class="security-note">Token chỉ được giữ trong phiên trình duyệt này.</p>
+    </section>
+  </main>
+  <script src="/static/login.js" defer></script>
+</body>
+</html>
