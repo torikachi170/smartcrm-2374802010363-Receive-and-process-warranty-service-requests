@@ -140,6 +140,9 @@ def test_unconfigured_database_returns_standard_error_envelope(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setattr(
+        "src.presentation.api.repository_from_environment", lambda: None
+    )
     response = TestClient(create_app(auth_service=auth_service)).post(
         "/api/classify",
         json={"issue_desc": "Mô tả lỗi hợp lệ để phân loại"},
