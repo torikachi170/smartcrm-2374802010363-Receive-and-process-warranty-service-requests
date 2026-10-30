@@ -21,30 +21,39 @@ nhân viên thật, đăng ký người dùng hoặc phân quyền theo vai trò
 
 Yêu cầu: Docker Desktop (hoặc Docker Engine có Compose) đang chạy.
 
-1. Tạo `.env` từ `.env.example` nếu chưa có; nếu `.env` đã tồn tại, giữ lại các
-   giá trị hiện tại và bổ sung/cập nhật đủ các biến bên dưới.
-2. Trong `.env`, bảo đảm có `POSTGRES_DB`, `POSTGRES_USER`,
-   `POSTGRES_PASSWORD`, `DB_PORT` và `APP_PORT`; dùng `APP_PORT=8000` nếu muốn
-   mở giao diện tại cổng 8000. Đặt `POSTGRES_PASSWORD`, `DEMO_PASSWORD` và
-   `JWT_SECRET_KEY` thành giá trị cục bộ của bạn. Dùng mật khẩu PostgreSQL chỉ
-   gồm chữ/số/dấu gạch nối để phù hợp URL kết nối. Khóa JWT cần ít nhất 32 ký
-   tự. Không commit `.env` hay chia sẻ bí mật.
-3. Chạy hai lệnh:
+1. Tạo `.env` từ mẫu **chỉ khi chưa có**:
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+2. Mở `.env` và bảo đảm có đủ `POSTGRES_DB`, `POSTGRES_USER`,
+   `POSTGRES_PASSWORD`, `DB_PORT` và `APP_PORT`. Nếu đã có `.env` từ phiên bản
+   cũ, hãy bổ sung các biến còn thiếu, không sao chép đè lên file hiện tại.
+   Đặt `POSTGRES_PASSWORD`, `DEMO_PASSWORD` và `JWT_SECRET_KEY` thành giá trị
+   cục bộ của bạn. Mật khẩu PostgreSQL chỉ nên gồm chữ/số/dấu gạch nối để phù
+   hợp URL kết nối. Khóa JWT cần ít nhất 32 ký tự. Không commit `.env` hay
+   chia sẻ bí mật.
+
+   `APP_PORT` là cổng mở trên máy của bạn. Nếu đặt `APP_PORT=3000`, mở
+   `http://127.0.0.1:3000/login`; nếu đặt `APP_PORT=8000`, mở
+   `http://127.0.0.1:8000/login`.
+
+3. Kiểm tra cấu hình và khởi động:
+
+```powershell
+docker compose config --quiet
 docker compose up -d --build
 ```
 
-Chỉ chạy `Copy-Item` khi chưa có `.env`; nếu đã có thì không ghi đè tệp này.
 Đợi dịch vụ `db` và `api` chuyển sang trạng thái `healthy`:
 
 ```powershell
 docker compose ps
 ```
 
-Mở `http://127.0.0.1:<APP_PORT>/login` (mặc định
-`http://127.0.0.1:8000/login`); Swagger UI ở cùng cổng tại `/docs`.
+Mở `http://127.0.0.1:<APP_PORT>/` hoặc `http://127.0.0.1:<APP_PORT>/login`;
+đường dẫn gốc tự chuyển đến trang đăng nhập. Swagger UI ở cùng cổng tại `/docs`.
 Tên đăng nhập mặc định trong tệp mẫu là `demo`; mật khẩu là giá trị
 `DEMO_PASSWORD` do bạn đặt trong `.env`. Nếu giữ nguyên mẫu thì mật khẩu mẫu là
 `change-this-demo-password` (chỉ dành cho máy local).
@@ -80,7 +89,8 @@ Chạy ứng dụng:
 python -m uvicorn src.presentation.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Mở `http://127.0.0.1:8000/login`; tài khoản demo đọc từ `DEMO_USERNAME` và
+Mở `http://127.0.0.1:8000/` hoặc `http://127.0.0.1:8000/login`; đường dẫn
+gốc tự chuyển đến trang đăng nhập. Tài khoản demo đọc từ `DEMO_USERNAME` và
 `DEMO_PASSWORD` trong `.env`.
 
 ## API khách hàng và thiết bị
@@ -132,8 +142,7 @@ không được trỏ tới database có dữ liệu thật.
 
 Nộp BT2 còn cần repo GitHub public có tag `v0.2`, một PDF duy nhất theo cấu
 trúc workshop, ảnh chụp kết quả chạy/test/giao diện và xác nhận trạng thái nộp
-trên VLU E-learning. Workspace hiện chưa được khởi tạo Git nên các bước tag,
-push và kiểm tra GitHub phải thực hiện sau khi gắn remote repository.
+trên VLU E-learning.
 
 ## Đăng ký tài khoản
 

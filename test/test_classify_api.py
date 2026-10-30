@@ -161,6 +161,13 @@ def test_health_check_remains_available() -> None:
     assert response.headers["x-request-id"]
 
 
+def test_root_redirects_to_login() -> None:
+    response = client.get("/", follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "/login"
+
+
 def test_login_page_and_assets_are_served() -> None:
     page = client.get("/login")
     stylesheet = client.get("/static/login.css")
