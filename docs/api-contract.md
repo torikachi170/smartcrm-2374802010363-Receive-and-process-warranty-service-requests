@@ -5,9 +5,16 @@
 | Phương thức | Đường dẫn | Mục đích | User Story | Mã trạng thái |
 |---|---|---|---|---|
 | POST | /api/auth/login | Đăng nhập tài khoản demo, nhận access token | N/A (prototype) | 200, 400, 401, 503 |
-| GET | /api/customers?phone={phone} | Tra cứu khách theo SĐT (kèm danh sách thiết bị) | US1 | 200, 400, 404 |
+| GET | /api/customers?phone={phone} | Danh sách khách hoặc tra cứu theo SĐT | US1 | 200, 400 |
 | POST | /api/customers | Tạo khách hàng mới | US2 | 201, 400, 409 |
+| GET | /api/customers/{id} | Xem hồ sơ khách hàng | US1 | 200, 404 |
+| PATCH | /api/customers/{id} | Cập nhật hồ sơ khách hàng | BT2 CRUD | 200, 400, 404, 409 |
+| DELETE | /api/customers/{id} | Xóa khách hàng chưa có thiết bị/phiếu tham chiếu | BT2 CRUD, QT-13 | 204, 404, 409 |
+| GET | /api/customers/{id}/devices | Danh sách thiết bị của khách hàng | US1 | 200, 404 |
 | POST | /api/customers/{id}/devices | Ghi nhận thiết bị ngoài lịch sử mua | US3 | 201, 400, 404, 409 |
+| GET | /api/devices/{id} | Xem chi tiết thiết bị | BT2 CRUD | 200, 404 |
+| PATCH | /api/devices/{id} | Cập nhật thiết bị | BT2 CRUD | 200, 400, 404, 409 |
+| DELETE | /api/devices/{id} | Xóa thiết bị chưa có phiếu tham chiếu | BT2 CRUD, QT-13 | 204, 404, 409 |
 | POST | /api/classify | Đề xuất nhóm sự cố và mức ưu tiên từ mô tả lỗi | US4 | 200, 400 |
 | POST | /api/tickets | Tạo phiếu bảo hành (sinh mã, hạn cam kết, tình trạng bảo hành) | US3, US5 | 201, 400, 404, 409 |
 | GET | /api/tickets?center_id=&status=&due_before=&page=&size= | Danh sách phiếu, sắp theo hạn cam kết | US6 | 200, 400 |
@@ -20,7 +27,8 @@
 - Phân trang: `page` (từ 1), `size` (mặc định 20, tối đa 100); response kèm `total`.
 - Lỗi cùng một cấu trúc: `{ "error": { "code": "...", "message": "...", "fields": {...} } }`.
 - Endpoint nghiệp vụ được bảo vệ nhận `Authorization: Bearer <access_token>`. Thiếu, sai hoặc hết hạn token trả 401 với mã `UNAUTHORIZED`.
-- Prototype chỉ có một tài khoản demo cấu hình bằng `DEMO_USERNAME`, `DEMO_PASSWORD` và `JWT_SECRET_KEY`; token hiện chỉ mang `sub` và thời hạn. Chưa có đăng nhập thật, `employee_id`, `center_id` hay phân quyền theo vai trò. Không có endpoint DELETE (QT-13).
+- Prototype chỉ có một tài khoản demo cấu hình bằng `DEMO_USERNAME`, `DEMO_PASSWORD` và `JWT_SECRET_KEY`; token hiện chỉ mang `sub` và thời hạn. Chưa có đăng ký, đăng nhập thật, `employee_id`, `center_id` hay phân quyền theo vai trò.
+- Các endpoint CRUD mới ở BT2 chỉ xóa khách hàng chưa có thiết bị/phiếu và thiết bị chưa có phiếu. Xóa bản ghi đang được tham chiếu trả **409**; không cung cấp thao tác xóa phiếu bảo hành (QT-13).
 
 ### Đăng nhập prototype
 
@@ -33,13 +41,22 @@
 
 ## 3. GET /api/customers?phone={phone} — US1 (luồng 3a)
 
-- **200** — tìm thấy:
+- `phone` bỏ trống trả danh sách khách; có `phone` thì tra cứu chính xác. **200**:
 ```json
-{ "customer_id": 1024, "full_name": "Nguyễn Văn An", "phone": "090****567", "address": "12 Lê Lợi, Q.1",
-  "devices": [ { "device_id": 3311, "model_name": "Galaxy A52", "serial_no": "SN-A52-778901",
-                 "purchase_date": "2026-03-01", "warranty_months": 12 } ] }
+[{ "customer_id": 1024, "full_name": "Nguyễn Văn An", "phone": "090****567", "address": "12 Lê Lợi, Q.1" }]
 ```
-- **400** — `phone` sai định dạng (QT-02) · **404** — không có khách với số này (luồng 3a, giao diện hiện nút Tạo khách hàng mới).
+- **400** — `phone` sai định dạng (QT-02). Prototype chưa có phân quyền nên API luôn che bốn chữ số giữa theo NFR2.
+
+## 3.1. CRUD khách hàng và thiết bị — BT2
+
+- `POST /api/customers` nhận `full_name`, `phone`, `address?` → **201**; điện thoại phải gồm 10 chữ số bắt đầu bằng 0. Điện thoại trùng trả **409** `PHONE_EXISTS`.
+- `GET /api/customers/{id}` và `GET /api/customers/{id}/devices` trả hồ sơ/danh sách; không tìm thấy khách hàng trả **404** `CUSTOMER_NOT_FOUND`.
+- `PATCH /api/customers/{id}` nhận ít nhất một trường trong `full_name`, `phone`, `address`; điện thoại trùng trả **409** `PHONE_EXISTS`.
+- `DELETE /api/customers/{id}` trả **204** chỉ khi khách chưa có thiết bị và chưa được phiếu tham chiếu; nếu không trả **409** `CUSTOMER_HAS_DEVICES` hoặc `CUSTOMER_HAS_TICKETS`.
+- `POST /api/customers/{id}/devices` nhận `model_name`, `serial_no`, `note` (bắt buộc), `purchase_date?`, `warranty_months?`; serial trùng trả **409** `SERIAL_EXISTS`.
+- `GET /api/devices/{id}` và `PATCH /api/devices/{id}` đọc/cập nhật thiết bị. `customer_id` không thể thay đổi qua PATCH.
+- `DELETE /api/devices/{id}` trả **204** khi thiết bị chưa có phiếu; nếu có phiếu trả **409** `DEVICE_HAS_TICKETS`. Không xóa dây chuyền dữ liệu; không có API xóa phiếu.
+- Mọi endpoint CRUD yêu cầu bearer token. Không có API đăng ký tài khoản trong prototype.
 
 ## 4. POST /api/classify — US4
 

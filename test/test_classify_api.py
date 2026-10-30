@@ -158,6 +158,7 @@ def test_health_check_remains_available() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    assert response.headers["x-request-id"]
 
 
 def test_login_page_and_assets_are_served() -> None:
@@ -167,8 +168,13 @@ def test_login_page_and_assets_are_served() -> None:
 
     assert page.status_code == 200
     assert "id=\"login-form\"" in page.text
+    assert "Tiếp nhận bảo hành" in page.text
+    assert page.text.count('class="tab-button') == 3
     assert "Kết quả đề xuất sẽ hiển thị ở đây sau khi gửi mô tả." in page.text
     assert 'class="result empty"' in page.text
     assert stylesheet.status_code == 200
+    assert 'font-family: Cambria, "Segoe UI"' in stylesheet.text
+    assert 'h2, h3 {' in stylesheet.text
+    assert "letter-spacing: normal;" in stylesheet.text
     assert ".result.empty, .result.loading" in stylesheet.text
     assert script.status_code == 200

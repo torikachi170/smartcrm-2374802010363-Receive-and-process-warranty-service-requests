@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Đăng nhập | Mekong Mobile</title>
-  <link rel="stylesheet" href="/static/login.css">
+  <link rel="stylesheet" href="/static/login.css?v=4">
 </head>
 <body>
   <main class="shell">
     <section class="intro" aria-labelledby="page-title">
       <p class="eyebrow">MEKONG MOBILE <span>·</span> SMART CRM</p>
-      <h1 id="page-title">Trung tâm<br>tiếp nhận bảo hành</h1>
+      <h1 id="page-title">Trung tâm<br><span>Tiếp nhận bảo hành</span></h1>
       <p class="intro-copy">Đăng nhập để tiếp tục làm việc với yêu cầu bảo hành.</p>
       <div class="rule-mark" aria-hidden="true"><span></span><span></span><span></span></div>
       <p class="footnote">Môi trường prototype · tài khoản demo</p>
@@ -39,21 +39,75 @@
         </button>
       </form>
 
-      <section id="classify-panel" class="classify-panel" hidden>
+      <section id="workspace-panel" hidden>
         <div class="signed-in-row">
           <span class="status-dot" aria-hidden="true"></span>
           <p>Đã xác thực <strong id="signed-in-user"></strong></p>
           <button id="logout-button" class="text-button" type="button">Đăng xuất</button>
         </div>
-        <label for="issue-description">Mô tả sự cố</label>
-        <textarea id="issue-description" rows="3" minlength="10" maxlength="2000" placeholder="Ví dụ: Máy sạc không vào..."></textarea>
-        <button id="classify-button" class="secondary-button" type="button">Gửi phân loại</button>
-        <p id="classify-result" class="result empty" role="status" aria-live="polite">Kết quả đề xuất sẽ hiển thị ở đây sau khi gửi mô tả.</p>
+
+        <nav class="workspace-tabs" aria-label="Chức năng">
+          <button class="tab-button active" data-screen="customers" type="button">Khách hàng</button>
+          <button class="tab-button" data-screen="devices" type="button">Thiết bị</button>
+          <button class="tab-button" data-screen="classify" type="button">Phân loại</button>
+        </nav>
+
+        <section class="workspace-screen" data-screen-panel="customers">
+          <h2>Quản lý khách hàng</h2>
+          <form id="customer-form">
+            <input id="customer-id" type="hidden">
+            <label for="customer-name">Họ tên</label>
+            <input id="customer-name" maxlength="120" required>
+            <label for="customer-phone">Số điện thoại</label>
+            <input id="customer-phone" inputmode="numeric" maxlength="10" required>
+            <label for="customer-address">Địa chỉ</label>
+            <input id="customer-address" maxlength="255">
+            <button id="customer-submit" type="submit">Thêm khách hàng</button>
+            <button id="customer-cancel" class="text-button" type="button" hidden>Hủy chỉnh sửa</button>
+          </form>
+          <p id="customer-message" class="message" role="status" aria-live="polite"></p>
+          <div class="list-heading">
+            <h3>Danh sách</h3>
+            <button id="customer-refresh" class="text-button" type="button">Tải lại</button>
+          </div>
+          <div id="customer-list" class="record-list" aria-live="polite"></div>
+        </section>
+
+        <section class="workspace-screen" data-screen-panel="devices" hidden>
+          <h2>Quản lý thiết bị</h2>
+          <label for="device-customer">Khách hàng</label>
+          <select id="device-customer"></select>
+          <form id="device-form">
+            <input id="device-id" type="hidden">
+            <label for="device-model">Tên/model thiết bị</label>
+            <input id="device-model" maxlength="120" required>
+            <label for="device-serial">Serial/IMEI</label>
+            <input id="device-serial" maxlength="50" required>
+            <label for="device-purchase-date">Ngày mua (không bắt buộc)</label>
+            <input id="device-purchase-date" type="date">
+            <label for="device-warranty">Thời hạn bảo hành (tháng)</label>
+            <input id="device-warranty" type="number" min="1" max="32767" value="12" required>
+            <label for="device-note">Ghi chú nguồn gốc</label>
+            <input id="device-note" maxlength="255" required>
+            <button id="device-submit" type="submit">Thêm thiết bị</button>
+            <button id="device-cancel" class="text-button" type="button" hidden>Hủy chỉnh sửa</button>
+          </form>
+          <p id="device-message" class="message" role="status" aria-live="polite"></p>
+          <div id="device-list" class="record-list" aria-live="polite"></div>
+        </section>
+
+        <section id="classify-panel" class="classify-panel workspace-screen" data-screen-panel="classify" hidden>
+          <h2>Đề xuất nhóm sự cố</h2>
+          <label for="issue-description">Mô tả sự cố</label>
+          <textarea id="issue-description" rows="3" minlength="10" maxlength="2000" placeholder="Ví dụ: Máy sạc không vào..."></textarea>
+          <button id="classify-button" class="secondary-button" type="button">Gửi phân loại</button>
+          <p id="classify-result" class="result empty" role="status" aria-live="polite">Kết quả đề xuất sẽ hiển thị ở đây sau khi gửi mô tả.</p>
+        </section>
       </section>
 
       <p class="security-note">Token chỉ được giữ trong phiên trình duyệt này.</p>
     </section>
   </main>
-  <script src="/static/login.js" defer></script>
+  <script src="/static/login.js?v=2" defer></script>
 </body>
 </html>

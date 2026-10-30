@@ -1,5 +1,28 @@
 # Nhật ký thay đổi thiết kế
 
+## Sau khi đối chiếu workshop Buổi 12 (30/10/2026)
+
+### TD-07 CRUD khách hàng/thiết bị và xóa có điều kiện
+
+- Phản hồi: Workshop yêu cầu track SE chứng minh CRUD cho ít nhất hai thực thể; QT-13 của BT1 trước đó cấm xóa khách hàng và phiếu.
+- Quyết định: SỬA CÓ GIỚI HẠN. Bổ sung CRUD cho khách hàng và thiết bị; không cung cấp thao tác xóa phiếu.
+- Lý do: Đáp ứng tiêu chí CRUD của workshop, đồng thời giữ lịch sử bảo hành và toàn vẹn tham chiếu.
+- Ảnh hưởng: Chỉ xóa khách chưa có thiết bị/phiếu tham chiếu hoặc thiết bị chưa có phiếu; trường hợp đang được tham chiếu trả HTTP 409. Cập nhật QT-13, hợp đồng API, giao diện và test API/PostgreSQL.
+
+### TD-08 Đóng gói có thể dựng lại
+
+- Phản hồi: Buổi 11 yêu cầu cách chạy tái lập, health check, cấu hình môi trường và log hỗ trợ gỡ lỗi.
+- Quyết định: THÊM Docker multi-stage, Compose chờ DB healthy, lock dependency chính xác, schema/seed chạy lặp lại và log JSON có request ID.
+- Lý do: Giảm phụ thuộc vào phần mềm cài sẵn và lỗi thứ tự khởi động trên máy khác.
+- Ảnh hưởng: Thêm `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `requirements.lock`; cập nhật `.env.example`, README và test chạy lại DDL/seed. Chưa thể chạy Docker trong môi trường hiện tại vì chưa có Docker CLI.
+
+### TD-09 Đăng ký không thuộc prototype
+
+- Phản hồi: Cần giải thích vì sao giao diện không có mục đăng ký.
+- Quyết định: GIỮ một tài khoản demo cấu hình qua `.env`; không thêm tự đăng ký.
+- Lý do: Prototype chưa có bảng/tổ chức tài khoản nhân viên, xác minh danh tính, đặt lại mật khẩu, lưu trữ mật khẩu an toàn hoặc phân quyền.
+- Ảnh hưởng: Tài liệu và README nêu rõ username/password được lấy từ `DEMO_USERNAME`/`DEMO_PASSWORD`; muốn triển khai đăng ký cần thiết kế module xác thực riêng.
+
 ## Sau phản hồi Bài tập 1 (19/10/2026)
 
 ### TD-01 Xác nhận cam kết trong phụ lục AI

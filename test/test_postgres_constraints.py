@@ -6,11 +6,22 @@ from uuid import uuid4
 import psycopg
 import pytest
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
+
+from src.business.customer_service import (
+    CustomerService,
+    DuplicateRecord,
+    ReferencedRecord,
+)
+from src.data_access.customer_repository import CustomerRepository
 
 
 load_dotenv()
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 SCHEMA_SQL = Path(__file__).parents[1].joinpath("db", "schema.sql").read_text(
+    encoding="utf-8"
+)
+SEED_SQL = Path(__file__).parents[1].joinpath("db", "seed.sql").read_text(
     encoding="utf-8"
 )
 
@@ -185,3 +196,81 @@ def test_device_cannot_have_two_open_tickets(database: psycopg.Connection) -> No
             insert_ticket,
             ("TEST-7B", customer_id, device_id, received, received + timedelta(hours=72)),
         )
+
+
+def test_schema_and_seed_can_be_applied_repeatedly(
+    database: psycopg.Connection,
+) -> None:
+    database.execute(SCHEMA_SQL, prepare=False)
+    database.execute(SEED_SQL, prepare=False)
+    database.execute(SCHEMA_SQL, prepare=False)
+    database.execute(SEED_SQL, prepare=False)
+
+    assert database.execute(
+        "SELECT count(*) FROM issue_category"
+    ).fetchone()[0] == 6
+
+
+def test_repository_crud_and_referenced_delete_guards(
+    database: psycopg.Connection, isolated_schema: str
+) -> None:
+    engine = create_engine(
+        TEST_DATABASE_URL,
+        connect_args={"options": f"-c search_path={isolated_schema}"},
+    )
+    try:
+        service = CustomerService(CustomerRepository(engine))
+        customer = service.create_customer(
+            "Khách tích hợp", "0900000091", "12 Lê Lợi"
+        )
+        assert service.list_customers("0900000091") == [customer]
+
+        updated = service.update_customer(
+            customer.customer_id, {"address": "Địa chỉ mới"}
+        )
+        assert updated.address == "Địa chỉ mới"
+        with pytest.raises(DuplicateRecord):
+            service.create_customer("Khách trùng", "0900000091", None)
+
+        device = service.create_device(
+            customer.customer_id,
+            "Điện thoại tích hợp",
+            "INTEGRATION-91",
+            None,
+            12,
+            "Khách mang đến",
+        )
+        with pytest.raises(ReferencedRecord):
+            service.delete_customer(customer.customer_id)
+        assert service.delete_device(device.device_id) is None
+
+        ticket_device = service.create_device(
+            customer.customer_id,
+            "Điện thoại có phiếu",
+            "INTEGRATION-92",
+            None,
+            12,
+            "Khách mang đến",
+        )
+        received = datetime(2026, 10, 19, 9, tzinfo=timezone.utc)
+        database.execute(
+            "INSERT INTO ticket (ticket_code, customer_id, device_id, center_id, "
+            "issue_desc, priority, status, warranty_status, received_by, received_at, due_date) "
+            "VALUES (%s, %s, %s, 1, %s, %s, %s, %s, 1, %s, %s)",
+            (
+                "INTEGRATION-91",
+                customer.customer_id,
+                ticket_device.device_id,
+                "Thiết bị không hoạt động",
+                "TRUNG_BINH",
+                "MOI",
+                "CHUA_XAC_MINH",
+                received,
+                received + timedelta(hours=72),
+            ),
+        )
+        database.commit()
+        with pytest.raises(ReferencedRecord):
+            service.delete_device(ticket_device.device_id)
+    finally:
+        engine.dispose()

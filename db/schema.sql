@@ -5,7 +5,7 @@
 -- nhân sự) — ngoài phạm vi L2 nên không có bảng và không có khóa ngoại.
 -- =====================================================================
 
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
     customer_id  BIGSERIAL    PRIMARY KEY,
     full_name    VARCHAR(120) NOT NULL,
     phone        VARCHAR(20)  NOT NULL UNIQUE,              -- QT-01 (duy nhất); UNIQUE đã tạo sẵn index tra cứu (US1)
@@ -14,7 +14,7 @@ CREATE TABLE customer (
     CONSTRAINT chk_customer_phone CHECK (phone ~ '^0[0-9]{9}$')   -- QT-02: 10 chữ số, bắt đầu bằng 0
 );
 
-CREATE TABLE device (
+CREATE TABLE IF NOT EXISTS device (
     device_id        BIGSERIAL    PRIMARY KEY,
     customer_id      BIGINT       NOT NULL REFERENCES customer(customer_id),
     model_name       VARCHAR(120) NOT NULL,
@@ -24,14 +24,14 @@ CREATE TABLE device (
     note             VARCHAR(255)                           -- ghi chú nguồn gốc khi nhập thiết bị ngoài lịch sử mua (luồng 4a)
 );
 
-CREATE TABLE issue_category (
+CREATE TABLE IF NOT EXISTS issue_category (
     category_id       SERIAL      PRIMARY KEY,
     category_name     VARCHAR(60) NOT NULL UNIQUE,          -- MAN_HINH / PIN / SAC / PHAN_MEM / NUOC_VAO / KHAC
     default_priority  VARCHAR(12) NOT NULL CHECK (default_priority IN ('CAO', 'TRUNG_BINH', 'THAP')),
     is_active         BOOLEAN     NOT NULL DEFAULT TRUE     -- thêm nhóm sự cố mới = thêm dữ liệu, không sửa mã
 );
 
-CREATE TABLE ticket (
+CREATE TABLE IF NOT EXISTS ticket (
     ticket_id        BIGSERIAL    PRIMARY KEY,
     ticket_code      VARCHAR(20)  NOT NULL UNIQUE,          -- dạng BH-000231/2026
     customer_id      BIGINT       NOT NULL REFERENCES customer(customer_id),   -- khách tại thời điểm tiếp nhận
@@ -54,12 +54,12 @@ CREATE TABLE ticket (
 );
 
 -- NFR1, US6: danh sách phiếu của một trung tâm, lọc theo trạng thái, sắp theo hạn cam kết
-CREATE INDEX idx_ticket_center_status_due ON ticket (center_id, status, due_date);
+CREATE INDEX IF NOT EXISTS idx_ticket_center_status_due ON ticket (center_id, status, due_date);
 
 -- US3 (luồng ngoại lệ 7a), QT-03: mỗi thiết bị chỉ có MỘT phiếu chưa đóng
-CREATE UNIQUE INDEX uq_ticket_open_per_device ON ticket (device_id) WHERE status NOT IN ('DA_DONG', 'DA_HUY');
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ticket_open_per_device ON ticket (device_id) WHERE status NOT IN ('DA_DONG', 'DA_HUY');
 
-CREATE TABLE ticket_status_log (
+CREATE TABLE IF NOT EXISTS ticket_status_log (
     log_id       BIGSERIAL    PRIMARY KEY,
     ticket_id    BIGINT       NOT NULL REFERENCES ticket(ticket_id),
     from_status  VARCHAR(20),                               -- NULL ở dòng đầu tiên (khi tạo phiếu)
@@ -70,4 +70,4 @@ CREATE TABLE ticket_status_log (
 );
 
 -- US7: xem lịch sử trạng thái của một phiếu theo thời gian
-CREATE INDEX idx_log_ticket ON ticket_status_log (ticket_id, changed_at);
+CREATE INDEX IF NOT EXISTS idx_log_ticket ON ticket_status_log (ticket_id, changed_at);

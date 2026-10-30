@@ -1,126 +1,144 @@
-# Smart CRM - Mekong Mobile
+# Smart CRM — Mekong Mobile
 
-Track SE, luồng L2: tiếp nhận và phân loại yêu cầu bảo hành.
+Prototype Track SE cho luồng L2: tiếp nhận, quản lý khách hàng/thiết bị và đề
+xuất phân loại yêu cầu bảo hành.
 
-## 2. Yêu cầu môi trường
+## Chức năng hiện có
 
-- Python 3.14
-- PostgreSQL 16 trở lên
-- Git và PowerShell (Windows) hoặc shell tương đương
+- Đăng nhập bằng một tài khoản demo cấu hình qua môi trường.
+- CRUD khách hàng và thiết bị qua API và giao diện web.
+- Không xóa khách hàng còn thiết bị/phiếu tham chiếu hoặc thiết bị đã có phiếu;
+  API trả `409 Conflict`. Không có thao tác xóa phiếu.
+- Đề xuất nhóm sự cố và mức ưu tiên từ mô tả; kết quả chỉ là đề xuất, không tự
+  tạo phiếu bảo hành.
+- API health check tại `/health`; log request dạng JSON trên stdout, có
+  `request_id` và không ghi request body, mật khẩu hay token.
 
-## 3. Cài đặt và chạy dự án
+Prototype chưa triển khai tạo/lập danh sách phiếu, trạng thái phiếu, tài khoản
+nhân viên thật, đăng ký người dùng hoặc phân quyền theo vai trò.
 
-Chạy từng lệnh theo thứ tự tại thư mục dự án.
+## Chạy toàn hệ thống bằng Docker Compose
 
-### 3.1 Tạo môi trường Python
+Yêu cầu: Docker Desktop (hoặc Docker Engine có Compose) đang chạy.
 
-```powershell
-python -m venv .venv
-```
-
-### 3.2 Kích hoạt môi trường
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### 3.3 Cài dependencies
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-### 3.4 Tạo file cấu hình cục bộ
+1. Tạo `.env` từ `.env.example` nếu chưa có; nếu `.env` đã tồn tại, giữ lại các
+   giá trị hiện tại và bổ sung/cập nhật đủ các biến bên dưới.
+2. Trong `.env`, bảo đảm có `POSTGRES_DB`, `POSTGRES_USER`,
+   `POSTGRES_PASSWORD`, `DB_PORT` và `APP_PORT`; dùng `APP_PORT=8000` nếu muốn
+   mở giao diện tại cổng 8000. Đặt `POSTGRES_PASSWORD`, `DEMO_PASSWORD` và
+   `JWT_SECRET_KEY` thành giá trị cục bộ của bạn. Dùng mật khẩu PostgreSQL chỉ
+   gồm chữ/số/dấu gạch nối để phù hợp URL kết nối. Khóa JWT cần ít nhất 32 ký
+   tự. Không commit `.env` hay chia sẻ bí mật.
+3. Chạy hai lệnh:
 
 ```powershell
 Copy-Item .env.example .env
+docker compose up -d --build
 ```
 
-Mở `.env`, đặt `DATABASE_URL` tới PostgreSQL cục bộ, đổi `DEMO_PASSWORD` và
-đặt `JWT_SECRET_KEY` thành chuỗi ngẫu nhiên dài ít nhất 32 ký tự. Không commit
-file `.env` hoặc dùng mật khẩu mẫu ở môi trường thật.
+Chỉ chạy `Copy-Item` khi chưa có `.env`; nếu đã có thì không ghi đè tệp này.
+Đợi dịch vụ `db` và `api` chuyển sang trạng thái `healthy`:
 
-### 3.5 Chuẩn bị cơ sở dữ liệu
+```powershell
+docker compose ps
+```
 
-Mỗi lệnh dưới đây là một bước riêng; chạy từ thư mục dự án sau khi đã cài
-PostgreSQL và cấu hình quyền truy cập.
+Mở `http://127.0.0.1:<APP_PORT>/login` (mặc định
+`http://127.0.0.1:8000/login`); Swagger UI ở cùng cổng tại `/docs`.
+Tên đăng nhập mặc định trong tệp mẫu là `demo`; mật khẩu là giá trị
+`DEMO_PASSWORD` do bạn đặt trong `.env`. Nếu giữ nguyên mẫu thì mật khẩu mẫu là
+`change-this-demo-password` (chỉ dành cho máy local).
 
-#### 3.5.1 Tạo database chạy ứng dụng
+Schema và danh mục mẫu được nạp tự động khi PostgreSQL khởi tạo volume lần đầu.
+`db/schema.sql` và `db/seed.sql` có thể chạy lặp lại trên cùng schema. Sửa dữ
+liệu khởi tạo của volume hiện có không tự chạy lại các script. Chỉ khi cần xóa
+toàn bộ dữ liệu demo để dựng mới, có thể chạy `docker compose down -v`; thao tác
+này xóa dữ liệu trong volume.
+
+## Chạy local không dùng Docker
+
+Yêu cầu Python 3.14 và PostgreSQL 16 trở lên; PostgreSQL phải có sẵn và
+`DATABASE_URL` trong `.env` phải trỏ đúng database.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.lock
+```
+
+Chuẩn bị database local và nạp schema/danh mục:
 
 ```powershell
 createdb smart_crm_l2
-```
-
-#### 3.5.2 Tạo schema
-
-```powershell
 psql -d smart_crm_l2 -v ON_ERROR_STOP=1 -f db/schema.sql
-```
-
-#### 3.5.3 Nạp danh mục nhóm sự cố và mức ưu tiên
-
-```powershell
 psql -d smart_crm_l2 -v ON_ERROR_STOP=1 -f db/seed.sql
 ```
 
-`db/seed.sql` nạp sáu nhóm sự cố cấu hình của nghiệp vụ. Hiện chưa có bộ dữ liệu
-khách hàng/phiếu bảo hành mẫu; các luồng khách hàng và phiếu chưa được triển khai.
-
-#### 3.5.4 Tùy chọn: tạo database riêng cho test ràng buộc
+Chạy ứng dụng:
 
 ```powershell
-createdb smart_crm_test
+python -m uvicorn src.presentation.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Nếu dùng database test, đặt `TEST_DATABASE_URL` trong `.env` trỏ tới
-`smart_crm_test`. Test tạo và xóa schema tạm trong database này; tuyệt đối
-không trỏ biến này tới database chứa dữ liệu thật.
+Mở `http://127.0.0.1:8000/login`; tài khoản demo đọc từ `DEMO_USERNAME` và
+`DEMO_PASSWORD` trong `.env`.
 
-### 3.6 Chạy ứng dụng
+## API khách hàng và thiết bị
 
-#### 3.6.1 Khởi động API
+Tất cả API nghiệp vụ cần `Authorization: Bearer <JWT>` lấy từ
+`POST /api/auth/login`.
+
+| Phương thức | Đường dẫn | Chức năng |
+|---|---|---|
+| GET / POST | `/api/customers` | Liệt kê/tra cứu hoặc tạo khách hàng |
+| GET / PATCH / DELETE | `/api/customers/{id}` | Xem, sửa, hoặc xóa khách chưa được tham chiếu |
+| GET / POST | `/api/customers/{id}/devices` | Liệt kê hoặc thêm thiết bị |
+| GET / PATCH / DELETE | `/api/devices/{id}` | Xem, sửa, hoặc xóa thiết bị chưa có phiếu |
+| POST | `/api/classify` | Đề xuất nhóm sự cố và mức ưu tiên |
+
+DELETE trả `409` nếu bản ghi còn được dữ liệu khác tham chiếu; không có xóa dây
+chuyền. Số điện thoại phải gồm 10 chữ số bắt đầu bằng 0; `phone` và serial/IMEI
+phải duy nhất. Vì prototype chưa có vai trò quản lý, API che số điện thoại theo
+NFR2; khi sửa hồ sơ, để trống trường điện thoại sẽ giữ nguyên giá trị hiện có.
+
+## Kiểm thử
+
+Chạy test unit/API:
 
 ```powershell
-python -m uvicorn src.presentation.api:app --reload --port 8000
+python -m pytest test/test_auth_service.py test/test_classify_api.py test/test_customer_api.py -v
 ```
 
-#### 3.6.2 Mở giao diện
-
-Mở `http://127.0.0.1:8000/login`, đăng nhập bằng `DEMO_USERNAME` và
-`DEMO_PASSWORD` trong `.env`. Nhập mô tả sự cố dài từ 10 đến 2000 ký tự để
-nhận đề xuất nhóm sự cố và mức ưu tiên. API sử dụng danh mục đang hoạt động
-trong PostgreSQL; đây chỉ là đề xuất, không tự tạo phiếu. Swagger UI tại
-`http://127.0.0.1:8000/docs`.
-
-## 4. Chạy kiểm thử
-
-Chạy toàn bộ test và hiển thị tên từng test cùng tổng kết:
+Test ràng buộc PostgreSQL và kiểm tra chạy lại schema/seed dùng database riêng
+được chỉ định bởi `TEST_DATABASE_URL` trong `.env`:
 
 ```powershell
-python -m pytest -v
+python -m pytest test/test_postgres_constraints.py -v
 ```
 
-Các test PostgreSQL sẽ bị bỏ qua nếu chưa cấu hình `TEST_DATABASE_URL`. Bộ test
-còn lại bao phủ đăng nhập, token, API phân loại, validation, trường hợp ngoại
-lệ và giao diện tĩnh.
+Test PostgreSQL tạo schema ngẫu nhiên, xóa riêng schema đó khi hoàn tất và
+không được trỏ tới database có dữ liệu thật.
 
-## 5. Phạm vi prototype
+## Tài liệu và nộp BT2
 
-- Đã hiện thực: health check, đăng nhập demo bằng JWT, giao diện đăng nhập và
-  `POST /api/classify` dùng danh mục sự cố trong PostgreSQL.
-- Chưa hiện thực: tra cứu/tạo khách hàng, tạo/danh sách/cập nhật phiếu và
-  phân quyền nhân viên/trung tâm.
-- Đăng nhập chỉ có một tài khoản demo cấu hình qua môi trường; không dùng cấu
-  hình mẫu cho môi trường thật.
+- `docs/srs.md` — yêu cầu và quy tắc nghiệp vụ.
+- `docs/architecture.md` — kiến trúc đang hiện thực.
+- `docs/api-contract.md` — hợp đồng endpoint.
+- `docs/thay-doi-thiet-ke.md` — nhật ký điều chỉnh thiết kế BT2.
+- `docs/ai-disclosure.md` — khai báo công cụ hỗ trợ.
+- `docs/bug-log.md` — lỗi đã tái lập và xác nhận sửa.
+- `BT2_2374802010363_NguyenHoangMinhNhat.docx` — bản Word có thể chỉnh sửa;
+  người nộp tự xuất PDF sau khi bổ sung ảnh minh chứng thực tế.
 
-## Tài liệu
+Nộp BT2 còn cần repo GitHub public có tag `v0.2`, một PDF duy nhất theo cấu
+trúc workshop, ảnh chụp kết quả chạy/test/giao diện và xác nhận trạng thái nộp
+trên VLU E-learning. Workspace hiện chưa được khởi tạo Git nên các bước tag,
+push và kiểm tra GitHub phải thực hiện sau khi gắn remote repository.
 
-- `docs/srs.md` - SRS rút gọn và bảng truy vết.
-- `docs/architecture.md` - Kiến trúc bốn lớp.
-- `docs/erd.drawio` và `db/schema.sql` - ERD và DDL.
-- `docs/api-contract.md` - Hợp đồng API.
-- `docs/ai-disclosure.md` - Khai báo sử dụng công cụ AI.
-- `docs/Phu_luc_minh_chung_luong_prototype.docx` - Ảnh chụp các luồng prototype.
-- `docs/screenshots/` - Ảnh PNG riêng cho từng trạng thái đã kiểm thử.
+## Đăng ký tài khoản
 
-Mở file `.drawio` bằng diagrams.net.
+Prototype cố ý chưa có chức năng đăng ký. Tài khoản hiện là một tài khoản demo
+cấu hình tại máy chạy qua `DEMO_USERNAME` và `DEMO_PASSWORD`, không có bảng nhân
+viên/người dùng, quy trình xác minh, đổi mật khẩu hoặc phân quyền. Tự mở đăng ký
+sẽ tạo thêm rủi ro tài khoản giả mạo và cần thiết kế bảo mật riêng; chức năng
+này nằm ngoài phạm vi prototype hiện tại.

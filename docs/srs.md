@@ -109,7 +109,7 @@
 | QT-04 | Hạn cam kết sinh tự động từ thời điểm tiếp nhận: Cao = 24 giờ, Trung bình = 72 giờ, Thấp = 120 giờ; chỉ tính ngày làm việc (thứ Hai–thứ Bảy). |
 | QT-05 | Còn bảo hành nếu (ngày tiếp nhận − ngày mua) ≤ số tháng bảo hành; không có ngày mua thì đánh dấu "Chưa xác minh". Bước phê duyệt của quản lý nằm ngoài phạm vi. |
 | QT-06 | Phiếu chỉ chuyển trạng thái theo vòng đời; không quay lại trạng thái trước; mọi lần chuyển ghi vào lịch sử trạng thái. |
-| QT-13 | Không xóa vật lý phiếu và hồ sơ khách hàng: hệ thống không cung cấp thao tác xóa. |
+| QT-13 | Không xóa vật lý phiếu bảo hành. Để đáp ứng CRUD của BT2, chỉ được xóa vật lý khách hàng khi không có thiết bị hoặc phiếu tham chiếu; chỉ được xóa thiết bị khi chưa có phiếu tham chiếu. Trường hợp đang được tham chiếu phải bị từ chối với HTTP 409, không xóa dây chuyền dữ liệu. Đây là điều chỉnh có kiểm soát so với phạm vi BT1. |
 | QT-15 | Số điện thoại hiển thị dạng che với mọi vai trò trừ Quản lý trung tâm. |
 
 ## 6. Bảng truy vết yêu cầu
