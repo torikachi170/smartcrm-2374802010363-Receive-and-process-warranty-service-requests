@@ -154,6 +154,7 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .workspace-screen form button { margin-top: 14px; }
 .workspace-screen input, .workspace-screen select { min-width: 0; }
 .list-heading { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 10px; }
+.list-hint { margin: 0 0 10px; color: var(--muted); font: 12px/1.5 "Segoe UI", sans-serif; }
 .record-list { display: grid; gap: 9px; max-height: 260px; overflow-y: auto; }
 .record-card {
   display: flex;
@@ -178,6 +179,24 @@ button:disabled { cursor: wait; opacity: 0.65; }
 }
 .record-action:hover { color: #fff; background: var(--green); }
 .text-button.record-action { background: transparent; }
+.customer-record { border: 1px solid var(--line); background: #fff; font: 13px/1.45 "Segoe UI", sans-serif; }
+.customer-record-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; }
+.customer-device-panel { padding: 0 12px 12px; border-top: 1px solid var(--line); }
+.customer-device-panel[hidden] { display: none; }
+.warranty-summary { margin: 10px 0; color: var(--green); font-weight: 700; }
+.device-table-wrap { overflow-x: auto; }
+.device-table { width: 100%; border-collapse: collapse; background: #fff; font: 12px/1.45 "Segoe UI", sans-serif; }
+.device-table th, .device-table td { min-width: 90px; padding: 9px 8px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+.device-table th { color: var(--muted); background: #f4f6f2; font-size: 11px; }
+.device-table td:first-child { min-width: 135px; }
+.device-table td:last-child { min-width: 120px; }
+.table-secondary { display: block; margin-top: 3px; color: var(--muted); }
+.status-badge { display: inline-block; border-radius: 2px; padding: 3px 6px; font-size: 11px; }
+.status-active, .priority-low { color: #17604e; background: #e4f1e9; }
+.status-inactive, .priority-none { color: #687276; background: #eff0ed; }
+.priority-high { color: #9c3025; background: #fae7e2; }
+.priority-medium { color: #8b5a16; background: #fbf0d9; }
+.error-text { color: #a33c2d; }
 .empty-state { color: var(--muted); font: 13px/1.5 "Segoe UI", sans-serif; }
 .message.error { color: #a33c2d; }
 .message.success { color: var(--green); }
@@ -194,6 +213,123 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .result.success { color: var(--green); }
 [hidden] { display: none !important; }
 
+.is-authenticated {
+  background: #f2f4f1;
+}
+.is-authenticated .shell {
+  display: block;
+  max-width: 1440px;
+  min-height: 100vh;
+  padding: 28px clamp(20px, 4vw, 56px);
+}
+.is-authenticated .intro,
+.is-authenticated .panel-heading {
+  display: none;
+}
+.is-authenticated .auth-panel {
+  max-width: none;
+  padding: 22px clamp(20px, 3vw, 40px) 28px;
+  border-top-width: 5px;
+  box-shadow: 0 12px 32px rgba(32, 42, 46, 0.08);
+}
+.is-authenticated .signed-in-row {
+  min-height: 32px;
+  color: var(--muted);
+}
+.is-authenticated .workspace-tabs {
+  grid-template-columns: repeat(3, minmax(120px, 180px));
+  margin: 14px 0 26px;
+}
+.is-authenticated .workspace-screen > h2 {
+  margin-bottom: 20px;
+  font-size: 30px;
+}
+.is-authenticated #customer-form {
+  grid-template-columns: minmax(110px, 180px) minmax(0, 1fr);
+  max-width: 900px;
+  gap: 0 18px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  background: #f7f8f5;
+}
+.is-authenticated #customer-form input[type="hidden"] {
+  display: none;
+}
+.is-authenticated #customer-form label {
+  align-self: center;
+  margin: 8px 0;
+  color: var(--muted);
+}
+.is-authenticated #customer-form > button {
+  grid-column: 1 / -1;
+  justify-content: center;
+  margin-top: 12px;
+}
+.is-authenticated #customer-form > #customer-cancel {
+  justify-self: start;
+  width: auto;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 0 8px;
+}
+.is-authenticated .list-heading {
+  margin-top: 30px;
+}
+.is-authenticated .list-heading h3 {
+  font-size: 22px;
+}
+.is-authenticated .record-list {
+  max-height: none;
+  overflow: visible;
+  gap: 12px;
+}
+.is-authenticated .customer-record {
+  overflow: hidden;
+  border-color: #d3d9d3;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(32, 42, 46, 0.04);
+}
+.is-authenticated .customer-record-header {
+  min-height: 76px;
+  padding: 16px 20px;
+}
+.is-authenticated .customer-record-header strong {
+  font-size: 15px;
+}
+.is-authenticated .customer-record-header p {
+  margin-top: 5px;
+}
+.is-authenticated .customer-record .record-actions {
+  gap: 8px;
+}
+.is-authenticated .customer-record .record-action {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.is-authenticated .customer-device-panel {
+  padding: 4px 20px 18px;
+  background: #fcfcfa;
+}
+.is-authenticated .warranty-summary {
+  margin: 14px 0;
+  font-size: 14px;
+}
+.is-authenticated .device-table {
+  font-size: 13px;
+}
+.is-authenticated .device-table th,
+.is-authenticated .device-table td {
+  padding: 12px 14px;
+}
+.is-authenticated .device-table th {
+  font-size: 12px;
+}
+.is-authenticated .security-note {
+  margin-top: 18px;
+}
+
 @media (max-width: 920px) {
   .shell { grid-template-columns: 1fr; gap: 28px; padding: 28px 20px; align-content: center; }
   .intro { padding: 12px 0 0; }
@@ -207,6 +343,14 @@ button:disabled { cursor: wait; opacity: 0.65; }
 @media (max-width: 460px) {
   .record-card { align-items: flex-start; flex-direction: column; }
   .record-actions { justify-content: flex-start; }
+  .customer-record-header { align-items: flex-start; flex-direction: column; }
   .workspace-tabs { gap: 3px; }
   .tab-button { font-size: 11px; }
+  .is-authenticated .shell { padding: 12px; }
+  .is-authenticated .auth-panel { padding: 16px 12px 20px; }
+  .is-authenticated .workspace-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .is-authenticated #customer-form { grid-template-columns: 1fr; padding: 14px; }
+  .is-authenticated #customer-form > button { grid-column: 1; }
+  .is-authenticated .customer-record-header { padding: 14px; }
+  .is-authenticated .customer-device-panel { padding-right: 12px; padding-left: 12px; }
 }

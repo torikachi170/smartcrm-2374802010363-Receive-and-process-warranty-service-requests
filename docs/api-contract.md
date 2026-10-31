@@ -50,7 +50,7 @@
 ## 3.1. CRUD khách hàng và thiết bị — BT2
 
 - `POST /api/customers` nhận `full_name`, `phone`, `address?` → **201**; điện thoại phải gồm 10 chữ số bắt đầu bằng 0. Điện thoại trùng trả **409** `PHONE_EXISTS`.
-- `GET /api/customers/{id}` và `GET /api/customers/{id}/devices` trả hồ sơ/danh sách; không tìm thấy khách hàng trả **404** `CUSTOMER_NOT_FOUND`.
+- `GET /api/customers/{id}` và `GET /api/customers/{id}/devices` trả hồ sơ/danh sách; danh sách thiết bị có thêm `priority` từ phiếu đang mở gần nhất (null nếu chưa có phiếu); không tìm thấy khách hàng trả **404** `CUSTOMER_NOT_FOUND`.
 - `PATCH /api/customers/{id}` nhận ít nhất một trường trong `full_name`, `phone`, `address`; điện thoại trùng trả **409** `PHONE_EXISTS`.
 - `DELETE /api/customers/{id}` trả **204** chỉ khi khách chưa có thiết bị và chưa được phiếu tham chiếu; nếu không trả **409** `CUSTOMER_HAS_DEVICES` hoặc `CUSTOMER_HAS_TICKETS`.
 - `POST /api/customers/{id}/devices` nhận `model_name`, `serial_no`, `note` (bắt buộc), `purchase_date?`, `warranty_months?`; serial trùng trả **409** `SERIAL_EXISTS`.

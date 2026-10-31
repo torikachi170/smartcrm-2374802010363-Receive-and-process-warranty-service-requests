@@ -230,7 +230,7 @@ def test_customer_with_ticket_cannot_be_deleted(
 def test_device_crud_and_delete_unreferenced_record(
     api_client: tuple[TestClient, InMemoryCustomerStore],
 ) -> None:
-    client, _ = api_client
+    client, store = api_client
     customer_id = create_customer(client, "0900000002")
     created = client.post(
         f"/api/customers/{customer_id}/devices",
@@ -245,9 +245,19 @@ def test_device_crud_and_delete_unreferenced_record(
     )
     assert created.status_code == 201
     device_id = created.json()["device_id"]
-    assert client.get(
+    listing = client.get(
         f"/api/customers/{customer_id}/devices", headers=headers(client)
-    ).json()[0]["serial_no"] == "SERIAL-2"
+    )
+    assert listing.json()[0]["priority"] is None
+
+    store.devices[device_id] = Device(
+        **(store.devices[device_id].__dict__ | {"priority": "CAO"})
+    )
+    listing = client.get(
+        f"/api/customers/{customer_id}/devices", headers=headers(client)
+    )
+    assert listing.json()[0]["serial_no"] == "SERIAL-2"
+    assert listing.json()[0]["priority"] == "CAO"
 
     updated = client.patch(
         f"/api/devices/{device_id}",

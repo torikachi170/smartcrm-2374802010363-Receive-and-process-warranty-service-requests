@@ -19,6 +19,10 @@ const issueDescription = document.querySelector("#issue-description");
 const classifyButton = document.querySelector("#classify-button");
 const classifyResult = document.querySelector("#classify-result");
 let customers = [];
+const customerDevices = new Map();
+const expandedCustomerIds = new Set();
+const customerDeviceErrors = new Map();
+let customerDevicesNeedRefresh = false;
 
 class ApiError extends Error {
   constructor(message, code) {
@@ -53,6 +57,7 @@ async function apiRequest(path, options = {}) {
 }
 
 function showLoggedInState(username) {
+  document.body.classList.add("is-authenticated");
   loginForm.hidden = true;
   workspacePanel.hidden = false;
   signedInUser.textContent = username;
@@ -61,6 +66,7 @@ function showLoggedInState(username) {
 }
 
 function clearSession(message = "") {
+  document.body.classList.remove("is-authenticated");
   sessionStorage.removeItem(tokenStorageKey);
   sessionStorage.removeItem(userStorageKey);
   workspacePanel.hidden = true;
@@ -89,7 +95,7 @@ function renderCustomers() {
   customerList.replaceChildren();
   for (const customer of customers) {
     const item = document.createElement("article");
-    item.className = "record-card";
+    item.className = "customer-record";
     const details = document.createElement("div");
     const name = document.createElement("strong");
     name.textContent = customer.full_name;
@@ -99,12 +105,49 @@ function renderCustomers() {
 
     const actions = document.createElement("div");
     actions.className = "record-actions";
+    const devices = customerDevices.get(customer.customer_id);
+    const deviceButton = makeButton(
+      devices
+        ? `Thiết bị bảo hành: ${countActiveWarranties(devices)}`
+        : "Thiết bị",
+      "devices",
+      customer.customer_id,
+    );
+    deviceButton.setAttribute("aria-expanded", String(expandedCustomerIds.has(customer.customer_id)));
+    deviceButton.setAttribute("aria-controls", `customer-devices-${customer.customer_id}`);
     actions.append(
-      makeButton("Thiết bị", "devices", customer.customer_id),
+      deviceButton,
       makeButton("Sửa", "edit", customer.customer_id),
       makeButton("Xóa", "delete", customer.customer_id),
     );
-    item.append(details, actions);
+
+    const header = document.createElement("div");
+    header.className = "customer-record-header";
+    header.append(details, actions);
+    item.append(header);
+
+    const devicePanel = document.createElement("div");
+    devicePanel.id = `customer-devices-${customer.customer_id}`;
+    devicePanel.className = "customer-device-panel";
+    devicePanel.hidden = !expandedCustomerIds.has(customer.customer_id);
+    if (!devicePanel.hidden) {
+      if (customerDeviceErrors.has(customer.customer_id)) {
+        const error = document.createElement("p");
+        error.className = "empty-state error-text";
+        error.textContent = customerDeviceErrors.get(customer.customer_id);
+        const retry = makeButton("Thử lại", "devices-retry", customer.customer_id);
+        devicePanel.append(error, retry);
+      } else if (!devices) {
+        const loading = document.createElement("p");
+        loading.className = "empty-state";
+        loading.textContent = "Đang tải danh sách thiết bị...";
+        devicePanel.append(loading);
+      } else {
+        renderCustomerDeviceTable(devicePanel, devices);
+      }
+    }
+
+    item.append(devicePanel);
     customerList.append(item);
   }
   if (!customers.length) {
@@ -113,6 +156,120 @@ function renderCustomers() {
     empty.textContent = "Chưa có khách hàng. Hãy thêm hồ sơ đầu tiên.";
     customerList.append(empty);
   }
+}
+
+function countActiveWarranties(devices) {
+  return devices.filter((device) => {
+    const expiry = warrantyExpiry(device);
+    return expiry !== null && expiry >= todayDateString();
+  }).length;
+}
+
+function todayDateString() {
+  const today = new Date();
+  return [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function warrantyExpiry(device) {
+  if (!device.purchase_date) return null;
+  const [year, month, day] = device.purchase_date.split("-").map(Number);
+  const targetMonth = month - 1 + device.warranty_months;
+  const targetYear = year + Math.floor(targetMonth / 12);
+  const normalizedMonth = targetMonth % 12;
+  const lastDay = new Date(targetYear, normalizedMonth + 1, 0).getDate();
+  const expiryDay = Math.min(day, lastDay);
+  return `${targetYear}-${String(normalizedMonth + 1).padStart(2, "0")}-${String(expiryDay).padStart(2, "0")}`;
+}
+
+function formatWarranty(device) {
+  const expiry = warrantyExpiry(device);
+  if (!expiry) return { label: "Chưa xác định · thiếu ngày mua", active: false };
+  const date = expiry.split("-").reverse().join("/");
+  const active = expiry >= todayDateString();
+  return {
+    label: `${active ? "Còn bảo hành đến" : "Hết bảo hành"} ${date}`,
+    active,
+  };
+}
+
+function renderCustomerDeviceTable(container, devices) {
+  const activeCount = countActiveWarranties(devices);
+  const summary = document.createElement("p");
+  summary.className = "warranty-summary";
+  summary.textContent = `${activeCount}/${devices.length} thiết bị còn bảo hành`;
+  container.append(summary);
+
+  if (!devices.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "Khách hàng này chưa có thiết bị.";
+    container.append(empty);
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "device-table-wrap";
+  const table = document.createElement("table");
+  table.className = "device-table";
+  const header = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  for (const label of ["Thiết bị", "Serial/IMEI", "Bảo hành", "Ưu tiên", "Ghi chú"]) {
+    const cell = document.createElement("th");
+    cell.scope = "col";
+    cell.textContent = label;
+    headerRow.append(cell);
+  }
+  header.append(headerRow);
+
+  const body = document.createElement("tbody");
+  for (const device of devices) {
+    const row = document.createElement("tr");
+    const model = document.createElement("td");
+    const modelName = document.createElement("strong");
+    modelName.textContent = device.model_name;
+    const purchase = document.createElement("span");
+    purchase.className = "table-secondary";
+    purchase.textContent = device.purchase_date
+      ? `Mua ngày ${device.purchase_date.split("-").reverse().join("/")}`
+      : "Chưa rõ ngày mua";
+    model.append(modelName, purchase);
+
+    const serial = document.createElement("td");
+    serial.textContent = device.serial_no;
+    const warrantyCell = document.createElement("td");
+    const warranty = formatWarranty(device);
+    const warrantyBadge = document.createElement("span");
+    warrantyBadge.className = `status-badge ${warranty.active ? "status-active" : "status-inactive"}`;
+    warrantyBadge.textContent = warranty.label;
+    const duration = document.createElement("span");
+    duration.className = "table-secondary";
+    duration.textContent = `${device.warranty_months} tháng`;
+    warrantyCell.append(warrantyBadge, duration);
+
+    const priority = document.createElement("td");
+    const priorityBadge = document.createElement("span");
+    const priorityLabels = {
+      CAO: ["Cao", "priority-high"],
+      TRUNG_BINH: ["Trung bình", "priority-medium"],
+      THAP: ["Thấp", "priority-low"],
+    };
+    const priorityInfo = priorityLabels[device.priority];
+    priorityBadge.className = `status-badge ${priorityInfo ? priorityInfo[1] : "priority-none"}`;
+    priorityBadge.textContent = priorityInfo ? priorityInfo[0] : "Chưa có phiếu";
+    priority.append(priorityBadge);
+
+    const note = document.createElement("td");
+    note.textContent = device.note || "—";
+    row.append(model, serial, warrantyCell, priority, note);
+    body.append(row);
+  }
+  table.append(header, body);
+  wrapper.append(table);
+  container.append(wrapper);
 }
 
 function populateCustomerSelect() {
@@ -140,6 +297,9 @@ function populateCustomerSelect() {
 async function loadCustomers() {
   try {
     customers = await apiRequest("/api/customers");
+    customerDevices.clear();
+    customerDeviceErrors.clear();
+    expandedCustomerIds.clear();
     renderCustomers();
     populateCustomerSelect();
     if (deviceCustomer.value) await loadDevices();
@@ -219,6 +379,10 @@ function selectScreen(screen) {
     button.setAttribute("aria-current", active ? "page" : "false");
   });
   if (screen === "devices") loadDevices();
+  if (screen === "customers" && customerDevicesNeedRefresh) {
+    customerDevicesNeedRefresh = false;
+    loadCustomers();
+  }
 }
 
 document.querySelectorAll(".tab-button").forEach((button) => {
@@ -293,9 +457,44 @@ customerList.addEventListener("click", async (event) => {
   if (!customer) return;
 
   if (button.dataset.action === "devices") {
-    deviceCustomer.value = String(customer.customer_id);
-    populateCustomerSelect();
-    selectScreen("devices");
+    if (expandedCustomerIds.has(customer.customer_id)) {
+      expandedCustomerIds.delete(customer.customer_id);
+      renderCustomers();
+    } else {
+      expandedCustomerIds.add(customer.customer_id);
+      customerDeviceErrors.delete(customer.customer_id);
+      renderCustomers();
+      if (!customerDevices.has(customer.customer_id)) {
+        try {
+          const devices = await apiRequest(
+            `/api/customers/${customer.customer_id}/devices`,
+          );
+          customerDevices.set(customer.customer_id, devices);
+          renderCustomers();
+        } catch (error) {
+          if (!(error instanceof SessionExpiredError)) {
+            customerDeviceErrors.set(customer.customer_id, error.message);
+            renderCustomers();
+          }
+        }
+      }
+    }
+  } else if (button.dataset.action === "devices-retry") {
+    customerDevices.delete(customer.customer_id);
+    customerDeviceErrors.delete(customer.customer_id);
+    renderCustomers();
+    try {
+      const devices = await apiRequest(
+        `/api/customers/${customer.customer_id}/devices`,
+      );
+      customerDevices.set(customer.customer_id, devices);
+      renderCustomers();
+    } catch (error) {
+      if (!(error instanceof SessionExpiredError)) {
+        customerDeviceErrors.set(customer.customer_id, error.message);
+        renderCustomers();
+      }
+    }
   } else if (button.dataset.action === "edit") {
     document.querySelector("#customer-id").value = customer.customer_id;
     document.querySelector("#customer-name").value = customer.full_name;
@@ -351,6 +550,8 @@ deviceForm.addEventListener("submit", async (event) => {
       method: id ? "PATCH" : "POST",
       body: JSON.stringify(payload),
     });
+    customerDevices.delete(Number(deviceCustomer.value));
+    customerDevicesNeedRefresh = true;
     showMessage(deviceMessage, id ? "Đã cập nhật thiết bị." : "Đã thêm thiết bị.");
     resetDeviceForm();
     await loadDevices();
@@ -388,6 +589,8 @@ deviceList.addEventListener("click", async (event) => {
   ) {
     try {
       await apiRequest(`/api/devices/${id}`, { method: "DELETE" });
+      customerDevices.delete(Number(deviceCustomer.value));
+      customerDevicesNeedRefresh = true;
       showMessage(deviceMessage, "Đã xóa thiết bị.");
       await loadDevices();
     } catch (error) {

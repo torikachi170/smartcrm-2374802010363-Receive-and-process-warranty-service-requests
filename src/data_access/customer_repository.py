@@ -113,7 +113,12 @@ class CustomerRepository:
     def list_devices(self, customer_id: int) -> list[Device]:
         statement = text(
             "SELECT device_id, customer_id, model_name, serial_no, "
-            "purchase_date, warranty_months, note "
+            "purchase_date, warranty_months, note, "
+            "(SELECT ticket.priority FROM ticket "
+            "WHERE ticket.device_id = device.device_id "
+            "AND ticket.status NOT IN ('DA_DONG', 'DA_HUY') "
+            "ORDER BY ticket.received_at DESC, ticket.ticket_id DESC LIMIT 1) "
+            "AS priority "
             "FROM device WHERE customer_id = :customer_id ORDER BY device_id"
         )
         with self._engine.connect() as connection:
@@ -245,6 +250,7 @@ class CustomerRepository:
             purchase_date=row["purchase_date"],
             warranty_months=row["warranty_months"],
             note=row["note"],
+            priority=row["priority"] if "priority" in row else None,
         )
 
     @staticmethod

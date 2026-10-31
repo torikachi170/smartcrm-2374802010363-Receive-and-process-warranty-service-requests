@@ -20,6 +20,7 @@ class Device:
     purchase_date: date | None
     warranty_months: int
     note: str | None
+    priority: str | None = None
 
 
 class CustomerStore(Protocol):

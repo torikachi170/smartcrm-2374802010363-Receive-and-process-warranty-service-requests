@@ -118,6 +118,10 @@ class DeviceResponse(BaseModel):
     note: str | None
 
 
+class CustomerDeviceResponse(DeviceResponse):
+    priority: str | None
+
+
 class AuthenticationRequired(Exception):
     pass
 
@@ -390,7 +394,7 @@ def create_app(
 
     @app.get(
         "/api/customers/{customer_id}/devices",
-        response_model=list[DeviceResponse],
+        response_model=list[CustomerDeviceResponse],
         dependencies=[Depends(require_authentication)],
     )
     def list_devices(
