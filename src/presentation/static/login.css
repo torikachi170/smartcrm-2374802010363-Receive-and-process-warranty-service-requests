@@ -154,6 +154,9 @@ button:disabled { cursor: wait; opacity: 0.65; }
 .workspace-screen form button { margin-top: 14px; }
 .workspace-screen input, .workspace-screen select { min-width: 0; }
 .list-heading { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 10px; }
+.customer-search-label { display: block; margin: 0 0 7px; color: var(--muted); font: 600 12px "Segoe UI", sans-serif; }
+.customer-search { max-width: 520px; min-height: 46px; border-radius: 4px; }
+.search-count { min-height: 18px; margin: 7px 0; color: var(--muted); font: 12px "Segoe UI", sans-serif; }
 .list-hint { margin: 0 0 10px; color: var(--muted); font: 12px/1.5 "Segoe UI", sans-serif; }
 .record-list { display: grid; gap: 9px; max-height: 260px; overflow-y: auto; }
 .record-card {

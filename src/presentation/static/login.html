@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Đăng nhập | Mekong Mobile</title>
-  <link rel="stylesheet" href="/static/login.css?v=6">
+  <link rel="stylesheet" href="/static/login.css?v=7">
 </head>
 <body>
   <main class="shell">
@@ -70,6 +70,9 @@
             <h3>Danh sách</h3>
             <button id="customer-refresh" class="text-button" type="button">Tải lại</button>
           </div>
+          <label class="customer-search-label" for="customer-search">Tìm khách hàng theo tên</label>
+          <input id="customer-search" class="customer-search" type="search" placeholder="Nhập tên khách hàng..." autocomplete="off">
+          <p id="customer-search-count" class="search-count" role="status" aria-live="polite"></p>
           <p class="list-hint">Mở “Thiết bị” để xem thông tin và tình trạng bảo hành của từng khách hàng.</p>
           <div id="customer-list" class="record-list" aria-live="polite"></div>
         </section>

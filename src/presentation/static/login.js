@@ -11,6 +11,8 @@ const logoutButton = document.querySelector("#logout-button");
 const customerForm = document.querySelector("#customer-form");
 const customerList = document.querySelector("#customer-list");
 const customerMessage = document.querySelector("#customer-message");
+const customerSearch = document.querySelector("#customer-search");
+const customerSearchCount = document.querySelector("#customer-search-count");
 const deviceForm = document.querySelector("#device-form");
 const deviceList = document.querySelector("#device-list");
 const deviceMessage = document.querySelector("#device-message");
@@ -93,7 +95,15 @@ function makeButton(label, action, id, className = "record-action") {
 
 function renderCustomers() {
   customerList.replaceChildren();
-  for (const customer of customers) {
+  const query = normalizeSearchText(customerSearch.value.trim());
+  const visibleCustomers = customers.filter((customer) =>
+    normalizeSearchText(customer.full_name).includes(query),
+  );
+  customerSearchCount.textContent = query
+    ? `Tìm thấy ${visibleCustomers.length}/${customers.length} khách hàng`
+    : `${customers.length} khách hàng`;
+
+  for (const customer of visibleCustomers) {
     const item = document.createElement("article");
     item.className = "customer-record";
     const details = document.createElement("div");
@@ -150,12 +160,23 @@ function renderCustomers() {
     item.append(devicePanel);
     customerList.append(item);
   }
-  if (!customers.length) {
+  if (!customers.length || !visibleCustomers.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = "Chưa có khách hàng. Hãy thêm hồ sơ đầu tiên.";
+    empty.textContent = customers.length
+      ? "Không tìm thấy khách hàng phù hợp với tên đã nhập."
+      : "Chưa có khách hàng. Hãy thêm hồ sơ đầu tiên.";
     customerList.append(empty);
   }
+}
+
+function normalizeSearchText(value) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi");
 }
 
 function countActiveWarranties(devices) {
@@ -525,6 +546,7 @@ customerList.addEventListener("click", async (event) => {
 
 document.querySelector("#customer-cancel").addEventListener("click", resetCustomerForm);
 document.querySelector("#customer-refresh").addEventListener("click", loadCustomers);
+customerSearch.addEventListener("input", renderCustomers);
 
 deviceCustomer.addEventListener("change", () => {
   resetDeviceForm();
